@@ -3,40 +3,51 @@
 (function () {
     "use strict";
 
-    var es6$asset$loader$$default = function es6$asset$loader$$default() {
+    var es6$asset$loader$$default = (function () {
 
         var assets = {},
-            notify = function notify(e) {},
-            load = function load(src) {
-            if (/\.js$/i.test(src)) {
-                return loadScript(src);
+            load = function load(asset) {
+
+            var element = undefined;
+
+            if (/\.js$/i.test(asset.url)) {
+                element = loadScript(asset.url);
             }
 
-            if (/\.css$/i.test(src)) {
-                return loadCss(src);
+            if (/\.css$/i.test(asset.url)) {
+                element = loadCss(asset.url);
             }
+
+            if (asset.onload) {
+                element.addEventListener("load", asset.onload);
+            }
+
+            if (asset.onerror) {
+                element.addEventListener("error", asset.onerror);
+            }
+
+            element.addEventListener("load", function () {
+                return assets[asset.url];
+            });
+
+            document.head.appendChild(element);
         },
             loadScript = function loadScript(src) {
             var script = document.createElement("script");
-            script.addEventListener("load", notify(src));
-            document.body.appendChild(script);
             script.setAttribute("src", src);
+            return script;
         },
             loadCss = function loadCss(href) {
             var link = document.createElement("link");
             link.setAttribute("rel", "stylesheet");
-            link.addEventListener("load", notify(href));
-            document.head.appendChild(link);
             link.setAttribute("href", href);
-        },
-            add = function add(assetObj) {
-            if (!assetObj.test || assetObj.test()) {
+            return link;
+        };
+
+        return function (assetObj) {
+            if (assets[assetObj.url] === undefined && assetObj.test === undefined || assetObj.test()) {
                 assetObj.forEach(load);
             }
         };
-    };
+    })();
 }).call(undefined);
-
-// stop from double loading
-
-// dispatch event

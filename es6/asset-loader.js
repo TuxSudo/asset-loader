@@ -3,52 +3,68 @@
 asset object should look like:
 
 {
-    test: function(){ return true } // conditional load
-    assets: ["file.js", "file.css"]
+
+    test: function(){ return true },  // conditional load
+
+    url: '/path/to/script.js',  // or /path/to/style.css
+
+    onload: function(){}
+
+    onerror: function(){}
+
 }
 
 
 */
 
-export default function() {
+export default (function() {
     
     var assets = {},
 
-        notify = function(e) {
-            // stop from double loading
 
-            // dispatch event
-        },
+        load = function(asset) {
 
-        load = function(src) {
-            if(/\.js$/i.test(src) ) {
-                return loadScript(src);
+            let element;
+
+            if(/\.js$/i.test(asset.url) ) {
+                element = loadScript(asset.url);
             }
 
-            if(/\.css$/i.test(src)) {
-                return loadCss(src);
+            if(/\.css$/i.test(asset.url)) {
+                element = loadCss(asset.url);
             }
+
+            if(asset.onload){
+                element.addEventListener('load', asset.onload);
+            }
+
+            if(asset.onerror){
+                element.addEventListener('error', asset.onerror);
+            }
+
+            element.addEventListener('load', () => assets[ asset.url ] );
+
+            document.head.appendChild(element);
         },
 
         loadScript = function(src) {
-            var script = document.createElement('script');
-            script.addEventListener("load", notify(src));
-            document.body.appendChild(script);
+            let script = document.createElement('script');
             script.setAttribute('src', src);
+            return script;
         },
 
         loadCss = function(href) {
-            var link = document.createElement('link');
+            let link = document.createElement('link');
             link.setAttribute('rel', 'stylesheet');
-            link.addEventListener("load", notify(href));
-            document.head.appendChild(link);
             link.setAttribute('href', href);
-        },
-
-        add = function(assetObj) {
-            if( !assetObj.test || assetObj.test() ) {
-                assetObj.forEach(load);
-            }
+            return link;
         };
 
-}
+    return function(assetObj) {
+        if( assets[ assetObj.url ] === undefined && assetObj.test === undefined || assetObj.test() ) {
+            assetObj.forEach(load);
+        }
+    };
+
+
+})();
